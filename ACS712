@@ -1,0 +1,88 @@
+/* importação necessária*/
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+
+int pinoSensor =AO;
+
+int sensorValue_aux = 0;
+float valorSensor = 0;
+float valorCorrente = 0;
+float voltsporUnidade = 0.004887586; // 5/1023
+float sensibilidade = 0.066;
+
+//tensão da rede AC 110 Volts e na verdade (127 volts)
+int tensao = 127;
+
+/* Declaração de Constantes e objetos*/
+// seta o endereço do Display LCD 0x27
+// Seta os pinos do I2C
+// Seta os pinos do I2C usado (padrão da biblioteca)
+LiquidCrystal_I2C lcd(0x3F, 2, 1, 0, 4, 5, 6, 7, 3. POSITIVE);
+
+void setup (){
+
+  //Inicia a Serial
+  Serial.begin(9600);
+  pinMode(pinoSensor, INPUT);
+
+  //inicializa o lcd de 20 caracters e 4 linhas
+
+  lcd.begin(20,4);
+  //lcd.begin(16,2)
+
+  // um breve blink de backlight//
+  //liga
+  lcd.backlight();
+  delay(250);
+  //desliga
+  lcd.nobacklight();
+  delay(250);
+  //finaliza com a luz de fundo ligada
+  lcd.backlight();
+}
+
+void loop(){
+
+  for(int i=10000; i>0; i--){
+    sensorValue_aux = (analogRead (pinoSensor) -
+    510);  // le o sensor
+    valorsensor += pow(sensorValue_aux,2);// soma os quadrados
+  }
+  valorSensor = (sqrt (valorsensor / 10000)) + voltsporUnidade; 
+  valorCorrente = (valorSensor/sensibiidade);
+
+  //tratamento para possivel ruido no ACS712
+  if(valorCorrente <= 0.095){
+    valorCorrente = 0;
+  }
+
+  valorSensor = 0;
+  lcd.clear();
+  //reposiciona o curso no eixo 0
+  lcd.setCursor(0,0);
+  //escreve
+  //mostra o valor da corrente
+
+  Serial.print("Corrente : ");//
+  Serial.print(valorCorrente, 3);
+  Serial.print(" A ");
+  lcd.print("Corrente : ");
+  lcd.print(valorCorrente, 3);
+  lcd.print("A");
+
+  //pula para segunda linha
+
+  lcd.setCursor(0,2);
+//escreve e calcula a potencia
+  Serial.print("Potencia (consumo) : ");//
+  Serial.print(valorCorrente * tensao);
+  Serial.print(" Watts");
+  lcd.print("Potencia (consumo) : ");
+  lcd.setCursor(0,3);
+  lcd.print(valorCorrente * tensao);
+  lcd.print("Watts");
+
+  delay (1000);
+  
+}
